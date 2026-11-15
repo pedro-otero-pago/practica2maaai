@@ -20,7 +20,7 @@ mkpath(RESULTS)
 
 # --- Código del proyecto ------------------------------------------
 # Se irá ampliando en cada bloque:
-# include(joinpath(RAIZ, "src", "datos.jl"))
+include(joinpath(RAIZ, "src", "datos.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
@@ -32,7 +32,9 @@ end
 
 # --- Fases (orden del enunciado) ----------------------------------
 fase(1, "Carga y preparación de los datos")
-println("Pendiente (B0/B1)")
+datos = cargarDatos(DATOS) # Se aplica la carga de datos sin trartamiento
+informeDatos(datos)
+println("\nPendiente (B1): holdout y CV por batch")
 
 fase(2, "Análisis exploratorio")
 println("Pendiente (B1)")

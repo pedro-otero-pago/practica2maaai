@@ -32,7 +32,7 @@ end
 
 # --- Fases (orden del enunciado) ----------------------------------
 fase(1, "Carga y preparación de los datos")
-datos = cargarDatos(DATOS) # Se aplica la carga de datos sin trartamiento
+datos = cargarDatos(DATOS) # Se aplica la carga de datos sin tratamiento
 informeDatos(datos)
 println("\nPendiente (B1): holdout y CV por batch")
 

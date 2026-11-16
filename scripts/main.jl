@@ -21,6 +21,7 @@ mkpath(RESULTS)
 # --- Código del proyecto ------------------------------------------
 # Se irá ampliando en cada bloque:
 include(joinpath(RAIZ, "src", "datos.jl"))
+include(joinpath(RAIZ, "src", "preprocesado", "holdout.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
@@ -34,7 +35,11 @@ end
 fase(1, "Carga y preparación de los datos")
 datos = cargarDatos(DATOS) # Se aplica la carga de datos sin trartamiento
 informeDatos(datos)
-println("\nPendiente (B1): holdout y CV por batch")
+
+idxTrain, idxTest = holdoutTemporal(datos)
+println("Holdout: train = ", length(idxTrain), " | test = ", length(idxTest))
+println("Batches en test: ", sort(unique(datos.batch[idxTest])))
+println("Test empieza en la fila ", minimum(idxTest), " (orden global)")
 
 fase(2, "Análisis exploratorio")
 println("Pendiente (B1)")

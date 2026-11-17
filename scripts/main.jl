@@ -75,6 +75,18 @@ println("\n\nGemelos divergentes (absDR > 3 veces distinto), por batch y pareja:
 show(stdout, sort(combine(groupby(divergenciaGemelos(datos), [:batch, :pareja]), nrow => :filas,
      :orden => minimum => :desde, :orden => maximum => :hasta), [:batch, :pareja]); allrows = true)
 
+println("\n\nFilas con formato alternativo (final del batch 10, en test) frente a filas normales")
+println("del batch 10 con el mismo gas y concentración (absDR). Cocientes entre 1/3 y 3 → válidas:")
+for cl in (4, 5)
+    alt    = datos[datos.formatoAlternativo .& (datos.clase .== cl), :]
+    refAlt = datos[(datos.batch .== 10) .& .!datos.formatoAlternativo .& (datos.clase .== cl) .&
+                   in.(datos.concentracion, Ref(Set(alt.concentracion))), :]
+    println("\nClase $cl ($(NOMBRES_CLASES[cl])): ", nrow(alt), " filas alternativas frente a ",
+            nrow(refAlt), " de referencia")
+    show(stdout, compararConReferencia(datos, alt.orden, refAlt, columnasDe("absDR")); allrows = true)
+    println()
+end 
+
 limpio = eliminarDefectuosas(datos)
 println("\nMediciones defectuosas eliminadas: ", nrow(datos) - nrow(limpio),
         " | Quedan: ", nrow(limpio))

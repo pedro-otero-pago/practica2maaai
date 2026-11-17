@@ -23,6 +23,7 @@ mkpath(RESULTS)
 include(joinpath(RAIZ, "src", "datos.jl"))
 include(joinpath(RAIZ, "src", "exploracion.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "limpieza.jl"))
+include(joinpath(RAIZ, "src", "preprocesado", "ausentes.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "holdout.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
@@ -92,7 +93,23 @@ println("\nMediciones defectuosas eliminadas: ", nrow(datos) - nrow(limpio),
         " | Quedan: ", nrow(limpio))
 
 fase(3, "Tratamiento de valores perdidos")
-println("Pendiente (B1, Pedro): marcar como ausentes los ceros restantes (S05_DR) y analizar los ausentes")
+
+# Análisis sobre los datos ORIGINALES (los 55 ceros), no sobre `limpio`
+datosNA = marcarAusentes(datos)
+pctVar, pctGlobal = porcentajeAusentes(datosNA)
+println("Ausentes por variable:")
+show(stdout, pctVar; allrows = true)
+println("\n\nPorcentaje global de ausentes: ", round(pctGlobal, digits = 4), " %")
+println("\nAusentes por batch:")
+show(stdout, ausentesPorBatch(datosNA); allrows = true)
+println("\n\nFilas con ausentes (eliminada = ya la quita la limpieza de la fase 2):")
+show(stdout, filasConAusentes(datosNA); allrows = true)
+println("\n\nPatrones de ausencia (variables que faltan a la vez):")
+show(stdout, patronesAusentes(datosNA); allrows = true, truncate = 0)
+
+# Regla fija, ANTES del holdout: los ceros que quedan tras la limpieza pasan a missing
+limpio = marcarAusentes(limpio)
+println("\n\nAusentes que quedan tras la limpieza: ", sum(ausentesPorFila(limpio)))
 
 # Holdout definitivo: sobre los datos ya limpios (reglas fijas), antes de imputar
 idxTrain, idxTest = holdoutTemporal(limpio)

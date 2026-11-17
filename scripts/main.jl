@@ -24,6 +24,7 @@ include(joinpath(RAIZ, "src", "datos.jl"))
 include(joinpath(RAIZ, "src", "exploracion.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "limpieza.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "ausentes.jl"))
+include(joinpath(RAIZ, "src", "preprocesado", "imputacion.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "holdout.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
@@ -115,6 +116,23 @@ println("\n\nAusentes que quedan tras la limpieza: ", sum(ausentesPorFila(limpio
 idxTrain, idxTest = holdoutTemporal(limpio)
 println("\nHoldout: train = ", length(idxTrain), " | test = ", length(idxTest))
 descripcionDataset(limpio, idxTrain, idxTest)
+
+# Comprobación del imputador KNN (ajustado SOLO con entrenamiento)
+Xtrain = limpio[idxTrain, NOMBRES_VARIABLES]
+Xtest  = limpio[idxTest,  NOMBRES_VARIABLES]
+maqImp = machine(ImputadorKNN(k = 5), Xtrain)
+fit!(maqImp, verbosity = 0)
+XtestImp = DataFrame(MLJ.transform(maqImp, Xtest))
+
+println("\nImputador KNN (k = 5): ausentes en test antes = ", sum(ausentesPorFila(Xtest)),
+        " | después = ", sum(ausentesPorFila(XtestImp)))
+
+# Fila 13481 (tolueno 1 ppmv, en test): valor imputado frente a filas parecidas de entrenamiento
+i = findfirst(==(13481), limpio.orden[idxTest])
+tr = limpio[idxTrain, :]
+sel = (tr.clase .== 6) .& (tr.concentracion .== 1.0)
+println("S05_DR imputado en la fila 13481: ", round(XtestImp[i, :S05_DR], digits = 2),
+        " | mediana de S05_DR en tolueno 1 ppmv (train): ", round(median(skipmissing(tr.S05_DR[sel])), digits = 2))
 
 fase(4, "Construcción de pipelines")
 println("Pendiente (B2)")

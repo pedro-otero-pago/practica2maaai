@@ -38,11 +38,6 @@ fase(1, "Carga y preparación de los datos")
 datos = cargarDatos(DATOS) # Se aplica la carga de datos sin tratamiento
 informeDatos(datos)
 
-# idxTrain, idxTest = holdoutTemporal(datos)
-# println("Holdout: train = ", length(idxTrain), " | test = ", length(idxTest))
-# println("Batches en test: ", sort(unique(datos.batch[idxTest])))
-# println("Test empieza en la fila ", minimum(idxTest), " (orden global)")
-
 fase(2, "Análisis exploratorio")
 println("Violaciones del signo esperado (celdas) por batch:")
 show(stdout, violacionesSigno(datos); allrows = true, allcols = true)
@@ -54,12 +49,38 @@ println("\n\nMediciones con ≥ 12 sensores sin respuesta:")
 show(stdout, filasNoResponden(datos, 12); allrows = true)
 println("\n\nVariables con ceros exactos: ", cerosPorVariable(datos))
 
+println("\n\nabsDR como razón de resistencias:")
+comprobacionAbsDR(datos)
+
+println("\nEtanol, batch 2: respuesta (mediana absDR) por concentración")
+show(stdout, respuestaPorConcentracion(datos, 2, 1, (1, 7, 15)); allrows = true)
+
+println("\n\nEtanol a 10 ppmv: filas con algún sensor sin respuesta, por batch")
+show(stdout, noRespuestaPorBatch(datos, 1, 10.0); allrows = true)
+
+refVentana = datos[(datos.batch .== 2) .& (datos.clase .== 2) .& (datos.concentracion .== 250.0) .&
+                   .!in.(datos.orden, Ref(825:833)), :]
+println("\n\nVentana 825–833 frente a etileno 250 ppmv del batch 2 (absDR de los 16 sensores):")
+show(stdout, compararConReferencia(datos, 825:833, refVentana, columnasDe("absDR")); allrows = true)
+println("\n\nVentana 825–833: las 8 características de los sensores 3 y 4")
+show(stdout, compararConReferencia(datos, 825:833, refVentana,
+     vcat(["S03_$c" for c in CARACTERISTICAS], ["S04_$c" for c in CARACTERISTICAS])); allrows = true)
+
+ref9894 = datos[(datos.batch .== 9) .& (datos.clase .== 6) .& (datos.concentracion .== 10.0) .&
+                (datos.orden .!= 9894), :]
+println("\n\nFila 9894 frente a tolueno 10 ppmv del batch 9:")
+show(stdout, compararConReferencia(datos, [9894], ref9894, columnasDe("absDR")); allrows = true)
+
+println("\n\nGemelos divergentes (absDR > 3 veces distinto), por batch y pareja:")
+show(stdout, sort(combine(groupby(divergenciaGemelos(datos), [:batch, :pareja]), nrow => :filas,
+     :orden => minimum => :desde, :orden => maximum => :hasta), [:batch, :pareja]); allrows = true)
+
 limpio = eliminarDefectuosas(datos)
 println("\nMediciones defectuosas eliminadas: ", nrow(datos) - nrow(limpio),
         " | Quedan: ", nrow(limpio))
 
 fase(3, "Tratamiento de valores perdidos")
-println("Pendiente (B1, Pedro): ventana de fallo de los sensores 3–4 → ausentes")
+println("Pendiente (B1, Pedro): marcar como ausentes los ceros restantes (S05_DR) y analizar los ausentes")
 
 # Holdout definitivo: sobre los datos ya limpios (reglas fijas), antes de imputar
 idxTrain, idxTest = holdoutTemporal(limpio)

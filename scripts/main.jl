@@ -23,6 +23,8 @@ mkpath(RESULTS)
 include(joinpath(RAIZ, "src", "datos.jl"))
 include(joinpath(RAIZ, "src", "exploracion.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "limpieza.jl"))
+include(joinpath(RAIZ, "src", "preprocesado", "ausentes.jl"))
+include(joinpath(RAIZ, "src", "preprocesado", "imputacion.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "holdout.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
@@ -92,12 +94,45 @@ println("\nMediciones defectuosas eliminadas: ", nrow(datos) - nrow(limpio),
         " | Quedan: ", nrow(limpio))
 
 fase(3, "Tratamiento de valores perdidos")
-println("Pendiente (B1, Pedro): marcar como ausentes los ceros restantes (S05_DR) y analizar los ausentes")
+
+# Análisis sobre los datos ORIGINALES (los 55 ceros), no sobre `limpio`
+datosNA = marcarAusentes(datos)
+pctVar, pctGlobal = porcentajeAusentes(datosNA)
+println("Ausentes por variable:")
+show(stdout, pctVar; allrows = true)
+println("\n\nPorcentaje global de ausentes: ", round(pctGlobal, digits = 4), " %")
+println("\nAusentes por batch:")
+show(stdout, ausentesPorBatch(datosNA); allrows = true)
+println("\n\nFilas con ausentes (eliminada = ya la quita la limpieza de la fase 2):")
+show(stdout, filasConAusentes(datosNA); allrows = true)
+println("\n\nPatrones de ausencia (variables que faltan a la vez):")
+show(stdout, patronesAusentes(datosNA); allrows = true, truncate = 0)
+
+# Regla fija, ANTES del holdout: los ceros que quedan tras la limpieza pasan a missing
+limpio = marcarAusentes(limpio)
+println("\n\nAusentes que quedan tras la limpieza: ", sum(ausentesPorFila(limpio)))
 
 # Holdout definitivo: sobre los datos ya limpios (reglas fijas), antes de imputar
 idxTrain, idxTest = holdoutTemporal(limpio)
 println("\nHoldout: train = ", length(idxTrain), " | test = ", length(idxTest))
 descripcionDataset(limpio, idxTrain, idxTest)
+
+# Comprobación del imputador KNN (ajustado SOLO con entrenamiento)
+Xtrain = limpio[idxTrain, NOMBRES_VARIABLES]
+Xtest  = limpio[idxTest,  NOMBRES_VARIABLES]
+maqImp = machine(ImputadorKNN(k = 5), Xtrain)
+fit!(maqImp, verbosity = 0)
+XtestImp = DataFrame(MLJ.transform(maqImp, Xtest))
+
+println("\nImputador KNN (k = 5): ausentes en test antes = ", sum(ausentesPorFila(Xtest)),
+        " | después = ", sum(ausentesPorFila(XtestImp)))
+
+# Fila 13481 (tolueno 1 ppmv, en test): valor imputado frente a filas parecidas de entrenamiento
+i = findfirst(==(13481), limpio.orden[idxTest])
+tr = limpio[idxTrain, :]
+sel = (tr.clase .== 6) .& (tr.concentracion .== 1.0)
+println("S05_DR imputado en la fila 13481: ", round(XtestImp[i, :S05_DR], digits = 2),
+        " | mediana de S05_DR en tolueno 1 ppmv (train): ", round(median(skipmissing(tr.S05_DR[sel])), digits = 2))
 
 fase(4, "Construcción de pipelines")
 println("Pendiente (B2)")

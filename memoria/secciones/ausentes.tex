@@ -1,0 +1,175 @@
+% ============================================================
+%  Memoria · Tratamiento y análisis de valores perdidos (Pedro)
+% ============================================================
+\section{Tratamiento y análisis de valores perdidos}
+\label{sec:ausentes}
+
+\subsection{Criterio de valor ausente}
+
+Siguiendo el criterio indicado por el profesor, se considera valor ausente todo cero exacto
+en cualquiera de las 128 variables sensoriales. El análisis se realiza sobre el conjunto de
+datos original (13\,910 mediciones), antes de aplicar la limpieza por reglas fijas, con el fin
+de caracterizar el fenómeno completo y no solo la parte que sobrevive a dicha limpieza.
+
+Conviene señalar que este criterio no recoge todas las mediciones inválidas: un sensor que no
+responde puede registrar una variación de resistencia negativa en lugar de nula. Ese tipo de
+mediciones se identifica y se trata en la limpieza de datos (Sección~\ref{sec:limpieza}),
+eliminando la medición completa, y no mediante imputación.
+
+\subsection{Cuantificación}
+
+Se detectan 55 celdas ausentes sobre un total de 1\,780\,480 ($13\,910 \times 128$), lo que
+supone un 0,0031~\% del conjunto de datos. Los ausentes afectan únicamente a 6 de las 128
+variables, y ninguna supera el 0,11~\% de sus valores (Tabla~\ref{tab:ausentesVariable}).
+
+La distribución, sin embargo, está muy lejos de ser uniforme. De las 55 celdas, 52 corresponden
+al sensor 4 y 51 se encuentran en el batch 2, mientras que los batches 1 y 4--9 no presentan
+ningún valor ausente (Tabla~\ref{tab:ausentesBatch}). En total, solo 18 de las 13\,910
+mediciones tienen algún valor ausente.
+
+\begin{table}[h]
+\centering
+\caption{Valores ausentes por variable (ceros exactos sobre las 13\,910 mediciones originales).}
+\label{tab:ausentesVariable}
+\begin{tabular}{lrr}
+\hline
+Variable & Celdas ausentes & \% de la variable \\
+\hline
+S04\_DR       & 14 & 0,101 \\
+S04\_EMAd0001 & 13 & 0,093 \\
+S04\_EMAd01   & 13 & 0,093 \\
+S04\_EMAd001  & 12 & 0,086 \\
+S05\_DR       &  2 & 0,014 \\
+S14\_DR       &  1 & 0,007 \\
+\hline
+Total (128 variables) & 55 & 0,0031 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Distribución de los valores ausentes por batch (los batches 1 y 4--9 no tienen ninguno).}
+\label{tab:ausentesBatch}
+\begin{tabular}{crrr}
+\hline
+Batch & Mediciones & Mediciones afectadas & Celdas ausentes \\
+\hline
+2  & 1\,244 & 14 & 51 \\
+3  & 1\,586 &  2 &  2 \\
+10 & 3\,600 &  2 &  2 \\
+\hline
+Total & 13\,910 & 18 & 55 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Patrones de ausencia}
+
+Para estudiar si los ausentes aparecen aislados o agrupados, se registra, en cada medición
+afectada, el conjunto de variables que faltan a la vez. Se obtienen solo cinco patrones
+distintos (Tabla~\ref{tab:patronesAusentes}).
+
+\begin{table}[h]
+\centering
+\caption{Patrones de ausencia: variables que faltan simultáneamente en una misma medición.}
+\label{tab:patronesAusentes}
+\begin{tabular}{lr}
+\hline
+Variables ausentes & Mediciones \\
+\hline
+S04\_DR, S04\_EMAd0001, S04\_EMAd001, S04\_EMAd01 & 12 \\
+S04\_DR                                          &  2 \\
+S05\_DR                                          &  2 \\
+S04\_EMAd0001, S04\_EMAd01                       &  1 \\
+S14\_DR                                          &  1 \\
+\hline
+\end{tabular}
+\end{table}
+
+El patrón dominante, presente en 12 mediciones, consiste en la pérdida simultánea de la
+variación de resistencia y de las tres características de decaimiento del sensor 4, mientras
+que su respuesta normalizada y sus características de crecimiento se conservan. Este
+comportamiento es compatible con un sensor que no completa su respuesta en esa medición, y no
+con fallos de lectura aislados.
+
+Los ausentes también se agrupan en el tiempo. Las mediciones afectadas forman bloques
+consecutivos: 669--678 (batch 2, etanol a 500--600~ppmv), la ventana 825--833 (batch 2,
+etileno a 250~ppmv) y 2722 y 2724 (batch 3, etanol a 10~ppmv). Estas 16 mediciones coinciden
+con episodios que el análisis exploratorio ya había identificado como fallos de los sensores
+(Sección~\ref{sec:limpieza}). Las dos mediciones restantes (10\,451 y 13\,481) pertenecen al
+batch 10, corresponden a tolueno a 1~ppmv, la concentración más baja del conjunto, y solo
+pierden la variable S05\_DR; el resto de la medición es normal.
+
+\subsection{Mecanismo de ausencia}
+
+\textbf{MCAR.} El mecanismo MCAR exige que la probabilidad de que falte un valor sea
+independiente de cualquier otra información. Los resultados anteriores lo descartan: los
+ausentes se concentran en un sensor, en un batch y en bloques temporales concretos. Con tan
+pocas celdas, un contraste formal (por ejemplo, $\chi^2$ entre ausencia y batch) tendría
+frecuencias esperadas demasiado bajas para ser fiable, pero la evidencia descriptiva es
+suficientemente clara.
+
+\textbf{MAR.} Las 16 mediciones del batch 2 y del batch 3 presentan ausentes asociados a fallos
+del hardware en periodos concretos. Su aparición se puede anticipar a partir de información
+observada: el batch, la posición temporal de la medición y el comportamiento anómalo del resto
+de variables de la misma medición y del sensor gemelo. Por ejemplo, en la ventana 825--833 el
+sensor 3 no responde y el sensor 4 presenta medias móviles rápidas entre 13 y 19 veces por
+encima de lo habitual. Este comportamiento es el propio de un mecanismo MAR.
+
+\textbf{MNAR.} Los dos ausentes de S05\_DR con tolueno a 1~ppmv no están asociados a ningún
+fallo: el resto de la medición es normal. La explicación más plausible es que la respuesta del
+sensor se sitúa en el límite de detección, de modo que el valor falta precisamente por ser muy
+pequeño. En ese caso la ausencia depende del propio valor no observado, lo que es compatible
+con un mecanismo MNAR. Con solo dos celdas esta hipótesis no puede confirmarse, pero es
+coherente con el ruido observado en la respuesta del tolueno a esta concentración.
+
+En conclusión, el mecanismo no es único: predomina un mecanismo MAR ligado a fallos de los
+sensores, con un componente residual compatible con MNAR.
+
+\subsection{Tratamiento e imputación}
+
+Cada tipo de ausencia recibe un tratamiento distinto.
+
+\textbf{Ausentes en mediciones defectuosas (MAR).} En estas mediciones el valor nulo no es un
+dato que falte de forma aislada, sino el síntoma de una medición fallida en su conjunto. Imputar
+esas celdas rellenaría huecos de una medición que ya es inválida en otras variables. Por ello se
+elimina la medición completa mediante la regla fija de limpieza (más del 10~\% de variables
+inválidas), aplicada antes de la partición holdout. Esta regla elimina 53 de las 55 celdas
+ausentes.
+
+\textbf{Ausentes residuales (MNAR).} Tras la limpieza quedan dos celdas ausentes, ambas en
+S05\_DR: una en una medición de entrenamiento (10\,451) y otra en una de test (13\,481). El
+marcado de los ceros como ausentes es una regla fija, por lo que se aplica antes del holdout.
+La imputación, en cambio, se ajusta a los datos y debe hacerse después.
+
+Para imputarlas se ha implementado un imputador KNN como nodo de MLJ, situado al inicio del
+pipeline y antes de la normalización Min--Max. En el ajuste guarda únicamente las mediciones
+completas del conjunto de entrenamiento y el rango de cada variable. Al transformar, para cada
+medición con valores ausentes calcula la distancia a esas mediciones usando solo las variables
+observadas, escalando cada diferencia por el rango de su variable para que DR, del orden de
+$10^4$, no domine frente a variables del orden de la unidad. El valor ausente se sustituye por
+la media de los $k = 5$ vecinos más cercanos.
+
+Al estar dentro del pipeline, el imputador se ajusta solo con los datos de entrenamiento: en la
+validación cruzada, con los de cada fold, y en la evaluación final, con todo el conjunto de
+entrenamiento. Así se evita cualquier fuga de información desde validación o test.
+
+Se descarta imputar con la media, la mediana o la moda de la variable, porque mezclarían gases
+y concentraciones con respuestas de órdenes de magnitud distintos. También se descarta la
+interpolación temporal entre mediciones consecutivas: la medición afectada de test está
+rodeada de otras mediciones de test, por lo que se estaría usando información del propio
+conjunto de test. Se elige un valor de $k$ pequeño para que los vecinos correspondan al mismo
+gas y a una concentración similar.
+
+\textbf{Resultado e impacto.} El valor imputado de S05\_DR en la medición 13\,481 es 120,53,
+frente a una mediana de 115,2 en las mediciones de tolueno a 1~ppmv del conjunto de
+entrenamiento, y unas cien veces menor que la mediana global de $|DR|$ (11\,415). El valor es
+coherente con una respuesta débil, como predice la hipótesis MNAR. Es esperable un ligero sesgo
+al alza, porque los vecinos son mediciones en las que el sensor sí respondió, pero su efecto es
+despreciable: tras la limpieza solo se imputan 2 celdas de 1\,775\,616. Aun así, el imputador es
+necesario, ya que los clasificadores utilizados no admiten valores ausentes.
+
+Por último, si los ausentes no se hubieran tratado antes de validar, se habrían concentrado en
+los folds que contienen el batch 2, introduciendo diferencias de calidad de datos entre folds
+ajenas al problema de deriva que se pretende estudiar.

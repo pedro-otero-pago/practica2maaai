@@ -26,6 +26,8 @@ include(joinpath(RAIZ, "src", "preprocesado", "limpieza.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "ausentes.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "imputacion.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "holdout.jl"))
+include(joinpath(RAIZ, "src", "validacion.jl"))
+include(joinpath(RAIZ, "src", "preprocesado", "minmax.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
@@ -116,6 +118,11 @@ println("\n\nAusentes que quedan tras la limpieza: ", sum(ausentesPorFila(limpio
 idxTrain, idxTest = holdoutTemporal(limpio)
 println("\nHoldout: train = ", length(idxTrain), " | test = ", length(idxTest))
 descripcionDataset(limpio, idxTrain, idxTest)
+# 5 fold CV por batches (solo sobre entrenamiento)
+folds = foldsPorBatch(limpio.batch[idxTrain])
+println("\n5 fold CV por batches:")
+show(stdout, comprobarFolds(folds, limpio.batch[idxTrain], limpio.clase[idxTrain]); allrows = true)
+println()
 
 # Comprobación del imputador KNN (ajustado SOLO con entrenamiento)
 Xtrain = limpio[idxTrain, NOMBRES_VARIABLES]
@@ -133,6 +140,17 @@ tr = limpio[idxTrain, :]
 sel = (tr.clase .== 6) .& (tr.concentracion .== 1.0)
 println("S05_DR imputado en la fila 13481: ", round(XtestImp[i, :S05_DR], digits = 2),
         " | mediana de S05_DR en tolueno 1 ppmv (train): ", round(median(skipmissing(tr.S05_DR[sel])), digits = 2))
+
+# Comprobación del Min-Max
+XtrainImp = DataFrame(MLJ.transform(maqImp, Xtrain))
+maqMM = machine(NormalizadorMinMax(), XtrainImp)
+fit!(maqMM, verbosity = 0)
+Ztrain = Matrix(DataFrame(MLJ.transform(maqMM, XtrainImp)))
+Ztest = Matrix(DataFrame(MLJ.transform(maqMM, XtestImp)))
+println("\nMin-Max, entrenamiento: mínimo = ", minimum(Ztrain), " | máximo = ", maximum(Ztrain))
+println("Min-Max, test (fuera de [0, 1] por la deriva): mínimo = ",
+        round(minimum(Ztest), digits = 3), " | máximo = ", round(maximum(Ztest), digits = 3))
+
 
 fase(4, "Construcción de pipelines")
 println("Pendiente (B2)")

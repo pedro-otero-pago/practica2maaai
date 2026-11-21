@@ -29,8 +29,8 @@ include(joinpath(RAIZ, "src", "preprocesado", "holdout.jl"))
 include(joinpath(RAIZ, "src", "validacion.jl"))
 include(joinpath(RAIZ, "src", "preprocesado", "minmax.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "red.jl"))
-include(joinpath(@__DIR__, "..", "src", "experimentos.jl"))
 include(joinpath(@__DIR__, "..", "src", "filtros", "anova.jl"))
+include(joinpath(@__DIR__, "..", "src", "experimentos.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------

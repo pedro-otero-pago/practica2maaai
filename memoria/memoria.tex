@@ -1,0 +1,63 @@
+% ============================================================
+%  Práctica 2 — MAAAI · memoria.tex (fichero principal)
+%  Cada sección está en memoria/secciones/ y se incluye con \input.
+%  No editar este fichero para escribir contenido: hacerlo en su sección.
+% ============================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla]{babel}   % es-tabla: "Tabla" en vez de "Cuadro"
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{../results/}}           % las figuras se guardan en results/
+
+\begin{document}
+
+% ---------------- Portada ----------------
+\begin{titlepage}
+\centering
+{\large Universidade da Coruña\par}
+{\large Grado en Inteligencia Artificial\par}
+\vspace{1cm}
+{\Large Modelos Avanzados de Aprendizaje Automático I\par}
+\vspace{2cm}
+{\huge\bfseries Práctica 2\par}
+\vspace{0.5cm}
+{\LARGE Clasificación de gases con un array de sensores\\ sometido a deriva temporal\par}
+\vfill
+{\large
+Oliver Konrad Martínez Malec\\
+Pedro Otero Pago\\
+Lucas Vilariño Lorenzen\par}
+\vspace{1cm}
+{\large Curso 2026/27\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ---------------- Secciones (orden del enunciado) ----------------
+\input{secciones/dataset}        % 1. Introducción y descripción del dataset   (Oliver)
+\input{secciones/exploratorio}   % 2. Análisis exploratorio inicial            (Oliver)
+\input{secciones/ausentes}       % 3. Tratamiento y análisis de valores perdidos (Pedro)
+\input{secciones/preprocesado}   % 4. Estrategias de preprocessing aplicadas   (varios)
+\input{secciones/pipeline}       % 5. Descripción del pipeline experimental
+\input{secciones/resultados}     % 6. Resultados experimentales
+\input{secciones/comparativa}    % 7. Comparativa de modelos
+\input{secciones/deriva}         % 8. Análisis del drift temporal
+\input{secciones/discusion}      % 9. Discusión metodológica
+\input{secciones/conclusiones}   % 10. Conclusiones finales
+\input{secciones/estadistica}    % 11. Test estadístico sobre la validación cruzada
+
+\appendix
+\input{secciones/ejecucion}      % A. Instrucciones de ejecución y estructura del código
+
+\end{document}

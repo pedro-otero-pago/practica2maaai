@@ -32,6 +32,7 @@ include(joinpath(@__DIR__, "..", "src", "modelos", "red.jl"))
 include(joinpath(@__DIR__, "..", "src", "filtros", "anova.jl"))
 include(joinpath(@__DIR__, "..", "src", "filtros", "mi.jl"))
 include(joinpath(@__DIR__, "..", "src", "experimentos.jl"))
+include(joinpath(@__DIR__, "..", "src", "modelos", "knn.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
@@ -157,10 +158,17 @@ println("Min-Max, test (fuera de [0, 1] por la deriva): mínimo = ",
 
 
 fase(4, "Construcción de pipelines")
-println("Pendiente (B2)")
+yTodo = categorical(limpio.clase)              # niveles comunes a entrenamiento y test
+X = limpio[idxTrain, NOMBRES_VARIABLES]        # con los missing: se imputan dentro de la red
+y = yTodo[idxTrain]
+println("Red: imputador KNN (k = 5) → Min–Max → [filtro] → [reducción] → clasificador")
+println("Validación: 5 folds por batches | Métricas: balanced_accuracy (selección) y accuracy")
 
 fase(5, "Entrenamiento y evaluación de modelos")
-println("Pendiente (B2/B3)")
+println("KNN (K = 1, 10, 20) sin filtro y con filtros ANOVA y MI (k = 16, 32, 64):")
+resKNN = experimentosKNN(X, y, folds)
+show(resKNN[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
+println()
 
 fase(6, "Validación experimental")
 println("Pendiente (B2/B3)")

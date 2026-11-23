@@ -31,11 +31,13 @@ include(joinpath(RAIZ, "src", "preprocesado", "minmax.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "red.jl"))
 include(joinpath(@__DIR__, "..", "src", "filtros", "anova.jl"))
 include(joinpath(@__DIR__, "..", "src", "filtros", "mi.jl"))
+include(joinpath(@__DIR__, "..", "src", "filtros", "correlacion.jl"))
 include(joinpath(@__DIR__, "..", "src", "experimentos.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "knn.jl"))
 include(joinpath(@__DIR__, "..", "src", "filtros", "rfe.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "svm.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "reduccion.jl"))
+include(joinpath(@__DIR__, "..", "src", "modelos", "mlp.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
@@ -183,6 +185,11 @@ Random.seed!(104) # FastICA parte de una matriz aleatoria: fijamos una semilla f
 resRed = experimentosReduccion(X, y, folds)
 show(resRed[:, [:reduccion, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
 println()
+
+println("\nMLP ([50], [100], [100, 50]) sin filtro y con Pearson, Spearman y Kendall (k = 16, 32, 64):")
+tMLP = @elapsed resMLP = experimentosMLP(X, y, folds)
+show(resMLP[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
+println("\nTiempo de los experimentos MLP: ", round(tMLP / 60, digits = 1), " min")
 
 fase(6, "Validación experimental")
 println("Pendiente (B2/B3)")

@@ -100,6 +100,16 @@ limpio = eliminarDefectuosas(datos)
 println("\nMediciones defectuosas eliminadas: ", nrow(datos) - nrow(limpio),
         " | Quedan: ", nrow(limpio))
 
+println("\nCorrelación entre sensores gemelos tras la limpieza:")
+show(correlacionGemelos(limpio); allrows = true)
+println()
+
+tablaNeg, absNeg = drNegativo(limpio)
+println("\nDR negativo tras la limpieza (sensores afectados por batch, gas y concentración):")
+show(tablaNeg; allrows = true, truncate = 0)
+println("\nabsDR de esas $(length(absNeg)) celdas: mediana = $(round(median(absNeg), digits = 2)) | ",
+        "rango = $(round.(extrema(absNeg), digits = 2))")
+
 fase(3, "Tratamiento de valores perdidos")
 
 # Análisis sobre los datos ORIGINALES (los 55 ceros), no sobre `limpio`

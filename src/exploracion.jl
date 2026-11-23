@@ -135,3 +135,29 @@ function comprobacionAbsDR(datos::DataFrame)
     println("Filas donde 'absDR < 1' no coincide con 'DR < 0' (sensor 1): ",
             count((datos.S01_DR .< 0) .!= (datos.S01_absDR .< 1)))
 end
+
+"""
+Celdas con `DR` negativo que quedan en `datos`: por batch, gas y concentración, cuántas
+filas hay y qué sensores las tienen; además, el `absDR` de cada una de esas celdas.
+Sirve para comprobar que tras la limpieza son sensores sin apenas respuesta
+(límite de detección) y no fallos.
+"""
+function drNegativo(datos::DataFrame)
+    colsDR    = columnasDe("DR")
+    colsAbsDR = columnasDe("absDR")
+
+    # Para cada fila, los sensores (1..16) con DR < 0
+    sensNeg = [findall(<(0), collect(r[colsDR])) for r in eachrow(datos)]
+    conNeg  = .!isempty.(sensNeg)                   # filas con alguno
+
+    # Tabla resumen por batch, gas y concentración
+    v = datos[conNeg, [:batch, :clase, :concentracion]]
+    v.sensores = sensNeg[conNeg]
+    tabla = combine(groupby(v, [:batch, :clase, :concentracion]), nrow => :filas,
+                    :sensores => (s -> join(sort(unique(vcat(s...))), ", ")) => :sensores)
+
+    # absDR de cada celda con DR < 0
+    absNeg = [datos[i, colsAbsDR[s]] for (i, ss) in zip(findall(conNeg), sensNeg[conNeg]) for s in ss]
+
+    return tabla, absNeg
+end

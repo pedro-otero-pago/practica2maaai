@@ -33,6 +33,9 @@ include(joinpath(@__DIR__, "..", "src", "filtros", "anova.jl"))
 include(joinpath(@__DIR__, "..", "src", "filtros", "mi.jl"))
 include(joinpath(@__DIR__, "..", "src", "experimentos.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "knn.jl"))
+include(joinpath(@__DIR__, "..", "src", "filtros", "rfe.jl"))
+include(joinpath(@__DIR__, "..", "src", "modelos", "svm.jl"))
+include(joinpath(@__DIR__, "..", "src", "modelos", "reduccion.jl"))
 # include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
@@ -168,6 +171,17 @@ fase(5, "Entrenamiento y evaluación de modelos")
 println("KNN (K = 1, 10, 20) sin filtro y con filtros ANOVA y MI (k = 16, 32, 64):")
 resKNN = experimentosKNN(X, y, folds)
 show(resKNN[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
+println()
+
+println("\nSVM (C = 0.1, 0.5, 1.0) sin filtro y con RFE (k = 16, 32, 64):")
+resSVM = experimentosSVM(X, y, folds)
+show(resSVM[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate= 0)
+println()
+
+println("\nKNN(K = 10) con PCA, LDA e ICA:")
+Random.seed!(104) # FastICA parte de una matriz aleatoria: fijamos una semilla fija para reproducir el log
+resRed = experimentosReduccion(X, y, folds)
+show(resRed[:, [:reduccion, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
 println()
 
 fase(6, "Validación experimental")

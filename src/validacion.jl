@@ -1,14 +1,14 @@
 # ============================================================
 #  Práctica 2 — MAAAI · validacion.jl
-#  Validación cruzada 5-fold por batches (batch-wise)
+#  Validación cruzada temporal de 5 folds por batches (ventana creciente)
 # ============================================================
 
 using DataFrames
 
-# Cada fold de validación son dos batches consecutivos completos
-# Ningún batch está en validación y entrenamiento a la vez
-# Los folds respetan el orden temporal de los batches (no se mezclan)
-const FOLDS_VALIDACION = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
+# Validación cruzada TEMPORAL con ventana creciente (indicación del profesor):
+# cada fold valida un bloque de batches y entrena SOLO con los batches anteriores.
+# El batch 1 no se valida nunca: no hay datos anteriores con los que entrenar.
+const FOLDS_VALIDACION = [[2], [3, 4], [5, 6], [7, 8], [9, 10]]
 
 
 # Recibimos el batch de cada fila del conjunto de train (limpio.batch[idxTrain])
@@ -17,7 +17,7 @@ function foldsPorBatch(batches::AbstractVector{<:Integer}, grupos = FOLDS_VALIDA
     pares = Tuple{Vector{Int}, Vector{Int}}[]
     for g in grupos
         val = findall(b -> b in g, batches)         # filas del batch en el grupo de validación
-        train = findall(b -> !(b in g), batches)    # filas del batch fuera del grupo de validación
+        train = findall(b -> b < minimum(g), batches)          # filas de los batches ANTERIORES
         push!(pares, (train, val))
     end
     return pares
@@ -25,21 +25,22 @@ end
 
 
 # Comprobaciones de los folds para main.jl
-# 1. Ningún batch aparece a la vez en train y validación
-# 2. Cada fila está exactamente una vez en el conjunto de validación
+# 1. Todo el entrenamiento de cada fold es anterior a su validación
+# 2. Ninguna fila está a la vez en entrenamiento y validación
+# 3. Se validan una sola vez todas las filas salvo las del batch 1
 function comprobarFolds(folds, batches::AbstractVector{<:Integer}, classes::AbstractVector{<:Integer})
-    n = length(batches)
     for (k, (tr, va)) in enumerate(folds)
-        @assert isempty(intersect(batches[tr], batches[va])) # Hay batches en ambos conj. a la vez
-        @assert isempty(intersect(tr, va)) # Hay filas en ambos conj. a la vez
+        @assert maximum(batches[tr]) < minimum(batches[va])   # todo el train es anterior a la validación
+        @assert isempty(intersect(tr, va))                      # ninguna fila en los dos
     end
-    @assert sort(reduce(vcat, [f[2] for f in folds])) == collect(1:n) # Cada fila debe estar en el conj. de validación 1 vez
+    # Cada fila está como mucho una vez en validación, y se validan todas salvo las del batch 1
+    @assert sort(reduce(vcat, [f[2] for f in folds])) == findall(b -> b > 1, batches)
 
     todas = sort(unique(classes))
-    resumen = DataFrame(fold = Int[], batchesValidacion = Vector{Int}[], filasTrain = Int[], 
-                        filasValidacion = Int[], clasesAusentesEnVal = Vector{Int}[])
+    resumen = DataFrame(fold = Int[], batchesTrain = Vector{Int}[], batchesValidacion = Vector{Int}[],
+                    filasTrain = Int[], filasValidacion = Int[], clasesAusentesEnVal = Vector{Int}[])
     for (k, (tr, va)) in enumerate(folds)
-        push!(resumen, (k, sort(unique(batches[va])), length(tr), length(va), setdiff(todas, unique(classes[va]))))
+        push!(resumen, (k, sort(unique(batches[tr])), sort(unique(batches[va])), length(tr), length(va), setdiff(todas, unique(classes[va]))))
     end
     return resumen
 end

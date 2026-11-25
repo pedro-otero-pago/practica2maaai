@@ -138,9 +138,9 @@ println("\n\nAusentes que quedan tras la limpieza: ", sum(ausentesPorFila(limpio
 idxTrain, idxTest = holdoutTemporal(limpio)
 println("\nHoldout: train = ", length(idxTrain), " | test = ", length(idxTest))
 descripcionDataset(limpio, idxTrain, idxTest)
-# 5 fold CV por batches (solo sobre entrenamiento)
+# Validación cruzada temporal de 5 folds (ventana creciente, solo sobre entrenamiento)
 folds = foldsPorBatch(limpio.batch[idxTrain])
-println("\n5 fold CV por batches:")
+println("\nValidación cruzada temporal (ventana creciente): cada fold entrena solo con batches anteriores")
 show(stdout, comprobarFolds(folds, limpio.batch[idxTrain], limpio.clase[idxTrain]); allrows = true)
 println()
 
@@ -177,7 +177,7 @@ yTodo = categorical(limpio.clase)              # niveles comunes a entrenamiento
 X = limpio[idxTrain, NOMBRES_VARIABLES]        # con los missing: se imputan dentro de la red
 y = yTodo[idxTrain]
 println("Red: imputador KNN (k = 5) → Min–Max → [filtro] → [reducción] → clasificador")
-println("Validación: 5 folds por batches | Métricas: balanced_accuracy (selección) y accuracy")
+println("Validación: 5 folds temporales (ventana creciente) | Métricas: balanced_accuracy (selección) y accuracy")
 
 fase(5, "Entrenamiento y evaluación de modelos")
 println("KNN (K = 1, 10, 20) sin filtro y con filtros ANOVA y MI (k = 16, 32, 64):")

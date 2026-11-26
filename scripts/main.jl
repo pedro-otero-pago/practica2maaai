@@ -39,6 +39,7 @@ include(joinpath(@__DIR__, "..", "src", "modelos", "svm.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "reduccion.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "mlp.jl"))
 include(joinpath(@__DIR__, "..", "src", "ensembles", "ensembles.jl"))
+include(joinpath(@__DIR__, "..", "src", "modelos", "finales.jl"))
 include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
@@ -229,8 +230,13 @@ println("\nAdaBoost (5 stumps, sin reducción), acierto por clase en el fold 5 (
 show(aciertoPorClase(RedClasificacion(clasificador = nuevoAdaBoost()), X, y, folds[5]); allrows = true)
 println()
 
-fase(6, "Validación experimental")
-println("Pendiente (B2/B3)")
+fase(6, "Validación experimental: Evaluación final en el conjunto de test")
+println("Cinco mejores combinaciones y modelos compuestos, entrenados con todo el entrenamiento:")
+yTest = yTodo[idxTest]
+Random.seed!(104)
+resFinal = evaluacionFinal(vcat(cincoMejores(), modelosCompuestos()), X, y, Xtest, yTest)
+show(resFinal; allrows = true, truncate = 0)
+println()
 
 fase(7, "Visualización de resultados")
 println("Pendiente (B4)")

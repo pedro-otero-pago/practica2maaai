@@ -25,6 +25,10 @@ RedClasificacion(; imputador = ImputadorKNN(), normalizador = NormalizadorMinMax
                    filtro = nothing, reduccion = nothing, clasificador) =
     RedClasificacion(imputador, normalizador, filtro, reduccion, clasificador)
 
+# Declaramos la entrada y salida de los modelos base para Stack
+MLJModelInterface.input_scitype(::Type{<:RedClasificacion})  = Table(Union{Missing, Continuous})
+MLJModelInterface.target_scitype(::Type{<:RedClasificacion}) = AbstractVector{<:Finite}
+
 function MLJBase.prefit(model::RedClasificacion, verbosity, X, y)
     Xs = source(X)
     ys = source(y)

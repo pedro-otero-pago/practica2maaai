@@ -38,7 +38,8 @@ include(joinpath(@__DIR__, "..", "src", "filtros", "rfe.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "svm.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "reduccion.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "mlp.jl"))
-# include(joinpath(RAIZ, "src", "estadistica.jl"))
+include(joinpath(@__DIR__, "..", "src", "ensembles", "ensembles.jl"))
+include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
 function fase(n, titulo)
@@ -200,6 +201,29 @@ println("\nMLP ([50], [100], [100, 50]) sin filtro y con Pearson, Spearman y Ken
 tMLP = @elapsed resMLP = experimentosMLP(X, y, folds)
 show(resMLP[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
 println("\nTiempo de los experimentos MLP: ", round(tMLP / 60, digits = 1), " min")
+
+println("\nTest pareado (t de Student y Wilcoxon) entre las 5 mejores configuraciones del MLP:")
+mejoresMLP = sort(resMLP, :balanced_acc, rev = true)[1:5, :]
+mejoresMLP.nombre = mejoresMLP.filtro .* " " .*
+    replace.(mejoresMLP.configuracion, "filtro.k = " => "k=", ", clasificador.builder.hidden = " => " ")
+show(compararModelos(mejoresMLP); allrows = true, truncate = 0)
+println()
+
+println("\nEnsembles (Bagging KNN K = 5, AdaBoost 5 stumps, EvoTree η = 0.2), sin reducción y con PCA 95 %:")
+tEns = @elapsed resEns = experimentosEnsembles(X, y, folds)
+show(resEns[:, [:modelo, :reduccion, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
+println("\nTiempo de los ensembles: ", round(tEns / 60, digits = 1), " min")
+
+println("\nTest pareado entre los ensembles (Bag/Ada/Evo + nº de estimadores; SR = sin reducción):")
+abrev = Dict("Bagging (KNN, K = 5)" => "Bag", "AdaBoost (stumps)" => "Ada", "EvoTree" => "Evo")
+resEns.nombre = [abrev[r.modelo] * last(split(r.configuracion, " = ")) *
+                 (r.reduccion == "Sin reducción" ? " SR" : " PCA") for r in eachrow(resEns)]
+show(compararModelos(resEns); allrows = true, truncate = 0)
+println()
+
+println("\nAdaBoost (5 stumps, sin reducción), acierto por clase en el fold 5 (batches 9–10):")
+show(aciertoPorClase(RedClasificacion(clasificador = nuevoAdaBoost()), X, y, folds[5]); allrows = true)
+println()
 
 fase(6, "Validación experimental")
 println("Pendiente (B2/B3)")

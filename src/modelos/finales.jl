@@ -54,7 +54,10 @@ boostings() = [("XGBoost", RedClasificacion(clasificador = XGB())),
                 ("LightGBM", RedClasificacion(clasificador = LGBM())),
                 ("CatBoost", RedClasificacion(clasificador = CAT()))]
 
-modelosCompuestos() = vcat([("Stacking (SVM + KNN + MLP → MLP)", nuevoStacking())], boostings())
+modelosCompuestos() = vcat([("Random Forest (500 árboles, profundidad 10)", nuevoRandomForest()),
+                            ("Hard Voting (3 SVM, tercios con semilla 104)", VotacionSVM(modelo = mejorSVM())),
+                            ("Stacking (SVM + KNN + MLP → MLP)", nuevoStacking())],
+                           boostings())
 
 """
 Entreno de cada modelo con todo el train y medición del del balanced_accuracy y accuracy en test.

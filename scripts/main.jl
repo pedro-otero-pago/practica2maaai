@@ -40,6 +40,7 @@ include(joinpath(@__DIR__, "..", "src", "modelos", "reduccion.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "mlp.jl"))
 include(joinpath(@__DIR__, "..", "src", "ensembles", "ensembles.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "finales.jl"))
+include(joinpath(@__DIR__, "..", "src", "ensembles", "votacion.jl"))
 include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------

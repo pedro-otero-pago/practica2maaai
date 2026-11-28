@@ -39,6 +39,7 @@ include(joinpath(@__DIR__, "..", "src", "modelos", "svm.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "reduccion.jl"))
 include(joinpath(@__DIR__, "..", "src", "modelos", "mlp.jl"))
 include(joinpath(@__DIR__, "..", "src", "ensembles", "ensembles.jl"))
+include(joinpath(@__DIR__, "..", "src", "modelos", "finales.jl"))
 include(joinpath(RAIZ, "src", "estadistica.jl"))
 
 # --- Utilidad para el log -----------------------------------------
@@ -182,11 +183,13 @@ println("Validación: 5 folds temporales (ventana creciente) | Métricas: balanc
 
 fase(5, "Entrenamiento y evaluación de modelos")
 println("KNN (K = 1, 10, 20) sin filtro y con filtros ANOVA y MI (k = 16, 32, 64):")
+Random.seed!(104)
 resKNN = experimentosKNN(X, y, folds)
 show(resKNN[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
 println()
 
 println("\nSVM (C = 0.1, 0.5, 1.0) sin filtro y con RFE (k = 16, 32, 64):")
+Random.seed!(104)
 resSVM = experimentosSVM(X, y, folds)
 show(resSVM[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate= 0)
 println()
@@ -194,10 +197,11 @@ println()
 println("\nKNN(K = 10) con PCA, LDA e ICA:")
 Random.seed!(104) # FastICA parte de una matriz aleatoria: fijamos una semilla fija para reproducir el log
 resRed = experimentosReduccion(X, y, folds)
-show(resRed[:, [:reduccion, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
+show(resRed[:, [:reduccion, :configuracion, :balanced_acc, :accuracy, :estado]]; allrows = true, truncate = 0)
 println()
 
 println("\nMLP ([50], [100], [100, 50]) sin filtro y con Pearson, Spearman y Kendall (k = 16, 32, 64):")
+Random.seed!(104)
 tMLP = @elapsed resMLP = experimentosMLP(X, y, folds)
 show(resMLP[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
 println("\nTiempo de los experimentos MLP: ", round(tMLP / 60, digits = 1), " min")
@@ -210,6 +214,7 @@ show(compararModelos(mejoresMLP); allrows = true, truncate = 0)
 println()
 
 println("\nEnsembles (Bagging KNN K = 5, AdaBoost 5 stumps, EvoTree η = 0.2), sin reducción y con PCA 95 %:")
+Random.seed!(104)
 tEns = @elapsed resEns = experimentosEnsembles(X, y, folds)
 show(resEns[:, [:modelo, :reduccion, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
 println("\nTiempo de los ensembles: ", round(tEns / 60, digits = 1), " min")
@@ -225,8 +230,13 @@ println("\nAdaBoost (5 stumps, sin reducción), acierto por clase en el fold 5 (
 show(aciertoPorClase(RedClasificacion(clasificador = nuevoAdaBoost()), X, y, folds[5]); allrows = true)
 println()
 
-fase(6, "Validación experimental")
-println("Pendiente (B2/B3)")
+fase(6, "Validación experimental: Evaluación final en el conjunto de test")
+println("Cinco mejores combinaciones y modelos compuestos, entrenados con todo el entrenamiento:")
+yTest = yTodo[idxTest]
+Random.seed!(104)
+resFinal = evaluacionFinal(vcat(cincoMejores(), modelosCompuestos()), X, y, Xtest, yTest)
+show(resFinal; allrows = true, truncate = 0)
+println()
 
 fase(7, "Visualización de resultados")
 println("Pendiente (B4)")

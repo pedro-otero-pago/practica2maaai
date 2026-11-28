@@ -51,7 +51,7 @@ nuevoStacking() = Stack(metalearner = nuevoMLP(),
 # XGBoost, LightGBM y CatBoost con sus valores por defecto en la misma red
 # imputador y Min-Max con ajuste solo en train
 boostings() = [("XGBoost", RedClasificacion(clasificador = XGB())),
-                ("LightGBM", RedClasificacion(clasificador = LGBM())),
+                ("LightGBM", RedClasificacion(clasificador = LGBM(verbosity = -1))),
                 ("CatBoost", RedClasificacion(clasificador = CAT()))]
 
 modelosCompuestos() = vcat([("Random Forest (500 árboles, profundidad 10)", nuevoRandomForest()),

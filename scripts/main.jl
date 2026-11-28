@@ -109,12 +109,12 @@ println("\nMediciones defectuosas eliminadas: ", nrow(datos) - nrow(limpio),
         " | Quedan: ", nrow(limpio))
 
 println("\nCorrelación entre sensores gemelos tras la limpieza:")
-show(correlacionGemelos(limpio); allrows = true)
+show(correlacionGemelos(limpio); allrows = true, allcols = true)
 println()
 
 tablaNeg, absNeg = drNegativo(limpio)
 println("\nDR negativo tras la limpieza (sensores afectados por batch, gas y concentración):")
-show(tablaNeg; allrows = true, truncate = 0)
+show(tablaNeg; allrows = true, allcols = true, truncate = 0)
 println("\nabsDR de esas $(length(absNeg)) celdas: mediana = $(round(median(absNeg), digits = 2)) | ",
         "rango = $(round.(extrema(absNeg), digits = 2))")
 
@@ -186,45 +186,62 @@ fase(5, "Entrenamiento y evaluación de modelos")
 println("KNN (K = 1, 10, 20) sin filtro y con filtros ANOVA y MI (k = 16, 32, 64):")
 Random.seed!(104)
 resKNN = experimentosKNN(X, y, folds)
-show(resKNN[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
+show(resKNN[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, allcols = true, truncate = 0)
 println()
 
 println("\nSVM (C = 0.1, 0.5, 1.0) sin filtro y con RFE (k = 16, 32, 64):")
 Random.seed!(104)
 resSVM = experimentosSVM(X, y, folds)
-show(resSVM[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate= 0)
+show(resSVM[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, allcols = true, truncate= 0)
 println()
 
 println("\nKNN(K = 10) con PCA, LDA e ICA:")
 Random.seed!(104) # FastICA parte de una matriz aleatoria: fijamos una semilla fija para reproducir el log
 resRed = experimentosReduccion(X, y, folds)
-show(resRed[:, [:reduccion, :configuracion, :balanced_acc, :accuracy, :estado]]; allrows = true, truncate = 0)
+show(resRed[:, [:reduccion, :configuracion, :balanced_acc, :accuracy, :estado]]; allrows = true, allcols = true, truncate = 0)
+println()
+
+println("\nTest pareado (t de Student y Wilcoxon) entre las 5 mejores configuraciones de KNN")
+println("(filtros de la tabla de KNN + reducciones con K = 10 que convergen):")
+redOK = resRed[resRed.estado .== "ok", :]                        # sin las filas "no converge"
+candidatosKNN = vcat(
+    DataFrame(nombre        = resKNN.filtro .* " " .* replace.(resKNN.configuracion,
+                                  "filtro.k = " => "k=", ", clasificador.K = " => " K=", "clasificador.K = " => "K="),
+              balanced_acc  = resKNN.balanced_acc,
+              balanced_fold = resKNN.balanced_fold),
+    DataFrame(nombre        = redOK.reduccion .* " " .* replace.(redOK.configuracion, "reduccion." => "") .* " K=10",
+              balanced_acc  = redOK.balanced_acc,
+              balanced_fold = redOK.balanced_fold))
+mejoresKNN = sort(candidatosKNN, :balanced_acc, rev = true)[1:5, :]
+show(mejoresKNN[:, [:nombre, :balanced_acc]]; allrows = true, allcols = true, truncate = 0)
+println()
+show(compararModelos(mejoresKNN); allrows = true, allcols = true, truncate = 0)
 println()
 
 println("\nMLP ([50], [100], [100, 50]) sin filtro y con Pearson, Spearman y Kendall (k = 16, 32, 64):")
 Random.seed!(104)
 tMLP = @elapsed resMLP = experimentosMLP(X, y, folds)
-show(resMLP[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
+show(resMLP[:, [:filtro, :configuracion, :balanced_acc, :accuracy]]; allrows = true, allcols = true, truncate = 0)
 println("\nTiempo de los experimentos MLP: ", round(tMLP / 60, digits = 1), " min")
 
 println("\nTest pareado (t de Student y Wilcoxon) entre las 5 mejores configuraciones del MLP:")
 mejoresMLP = sort(resMLP, :balanced_acc, rev = true)[1:5, :]
 mejoresMLP.nombre = mejoresMLP.filtro .* " " .*
     replace.(mejoresMLP.configuracion, "filtro.k = " => "k=", ", clasificador.builder.hidden = " => " ")
-show(compararModelos(mejoresMLP); allrows = true, truncate = 0)
+show(compararModelos(mejoresMLP); allrows = true, allcols = true, truncate = 0)
 println()
 
 println("\nEnsembles (Bagging KNN K = 5, AdaBoost 5 stumps, EvoTree η = 0.2), sin reducción y con PCA 95 %:")
 Random.seed!(104)
 tEns = @elapsed resEns = experimentosEnsembles(X, y, folds)
-show(resEns[:, [:modelo, :reduccion, :configuracion, :balanced_acc, :accuracy]]; allrows = true, truncate = 0)
+show(resEns[:, [:modelo, :reduccion, :configuracion, :balanced_acc, :accuracy]]; allrows = true, allcols = true, truncate = 0)
 println("\nTiempo de los ensembles: ", round(tEns / 60, digits = 1), " min")
 
 println("\nTest pareado entre los ensembles (Bag/Ada/Evo + nº de estimadores; SR = sin reducción):")
 abrev = Dict("Bagging (KNN, K = 5)" => "Bag", "AdaBoost (stumps)" => "Ada", "EvoTree" => "Evo")
 resEns.nombre = [abrev[r.modelo] * last(split(r.configuracion, " = ")) *
                  (r.reduccion == "Sin reducción" ? " SR" : " PCA") for r in eachrow(resEns)]
-show(compararModelos(resEns); allrows = true, truncate = 0)
+show(compararModelos(resEns); allrows = true, allcols = true, truncate = 0)
 println()
 
 println("\nAdaBoost (5 stumps, sin reducción), acierto por clase en el fold 5 (batches 9–10):")
@@ -236,7 +253,7 @@ println("Cinco mejores combinaciones y modelos compuestos, entrenados con todo e
 yTest = yTodo[idxTest]
 Random.seed!(104)
 resFinal = evaluacionFinal(vcat(cincoMejores(), modelosCompuestos()), X, y, Xtest, yTest)
-show(resFinal; allrows = true, truncate = 0)
+show(resFinal; allrows = true, allcols = true, truncate = 0)
 println()
 
 fase(7, "Visualización de resultados")

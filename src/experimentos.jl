@@ -1,8 +1,8 @@
 # =============================================================
-#  experimentos.jl — Validación cruzada por batches de una red
+#  experimentos.jl — Validación cruzada temporal de una red
 #  sobre una rejilla de hiperparámetros (TunedModel + Grid)
 # =============================================================
-using MLJ, DataFrames
+using MLJ, DataFrames, Statistics
 
 # balanced_accuracy primero: TunedModel elige la mejor configuración con la 1.ª medida.
 # Sin F1 macro: en el fold 2 (sin tolueno en validación) cuenta la clase 6 como 0.
@@ -13,7 +13,7 @@ valorEn(modelo, ruta) = foldl(getproperty, Symbol.(split(string(ruta), ".")); in
 
 """
 Evalúa `red` con cada combinación de `rangos` (uno o varios `range`) usando los folds
-por batches. Devuelve una fila por configuración: valores probados, media y valores por fold.
+temporales. Devuelve una fila por configuración: valores probados, media y valores por fold.
 """
 function evaluarRejilla(red, rangos, X, y, folds)
     rangos = rangos isa AbstractVector ? rangos : [rangos]
@@ -28,8 +28,8 @@ function evaluarRejilla(red, rangos, X, y, folds)
 
     return DataFrame(
         configuracion = [join(["$(r.field) = $(valorEn(x.model, r.field))" for r in rangos], ", ") for x in h],
-        balanced_acc  = [x.measurement[1] for x in h],
-        accuracy      = [x.measurement[2] for x in h],
+        balanced_acc  = [mean(x.per_fold[1]) for x in h],   # media simple: cada fold pesa igual (como en el test pareado)
+        accuracy      = [mean(x.per_fold[2]) for x in h],
         balanced_fold = [x.per_fold[1] for x in h],
         accuracy_fold = [x.per_fold[2] for x in h])
 end

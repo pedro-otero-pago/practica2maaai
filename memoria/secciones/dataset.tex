@@ -2,4 +2,86 @@
 \section{Introducción y descripción del dataset}
 \label{sec:dataset}
 
-Pendiente.
+\subsection{Contexto y objetivo}
+
+El dataset está compuesto por mediciones de 16 sensores MOX que cambian su resistencia eléctrica
+dependiendo del gas que evalúan, de manera que se pueda identificar de qué gas se trata. Uno de los
+problemas encontrados, y el más importante, es el fenómeno de la deriva temporal. Es decir, poco a
+poco y con el paso del tiempo los sensores van perdiendo efectividad y su respuesta va cambiando.
+Según el enunciado, estas causas pueden ser por envejecimiento, variaciones ambientales, cambios de
+calibración y degradación del hardware. Como consecuencia, la distribución de los datos cambia con
+el tiempo. El objetivo por lo tanto es una clasificación multiclase de 6 gases que sea robusta a esa
+deriva temporal.
+
+\subsection{Variables y clases}
+
+Dentro de cada sensor, se encuentran 8 características: \texttt{DR} (variación máxima de
+resistencia), \texttt{absDR} (variación normalizada), 3 \texttt{EMAi} (fase de subida), 3
+\texttt{EMAd} (fase de bajada), con $\alpha = 0{,}001;\ 0{,}01;\ 0{,}1$. Por lo tanto,
+16 sensores $\times$ 8 características dan como resultado 128 variables. Para el nombramiento de
+variables e identificar diferenciadamente cada sensor, se utiliza una nomenclatura de 2 dígitos para
+identificar al sensor y después la característica en sí. Por ejemplo: \texttt{S01\_DR}. Por último,
+el dataset contiene las siguientes clases: 1~Etanol, 2~Etileno, 3~Amoníaco, 4~Acetaldehído,
+5~Acetona, 6~Tolueno.
+
+\subsection{Carga y unificación}
+
+Los distintos ficheros del dataset (10 ficheros) se encuentran en un formato tipo LIBSVM:
+\texttt{clase;concentración índice:valor \dots} Se cargan en orden numérico, no alfabético, debido a
+que si se hiciera en alfabético \texttt{batch10} iría detrás de \texttt{batch1}. Esto permite
+conservar el orden temporal de los batches, y además se conserva el orden de las líneas de cada
+fichero. Con la columna \texttt{orden}, se sabe la posición original de la medición. Además de esa,
+se añadieron \texttt{batch} (información temporal pedida en el enunciado), \texttt{clase} y
+\texttt{concentracion}. Por otro lado, las 120 filas en formato alternativo al final del batch 10 se
+marcan con \texttt{formatoAlternativo} y su validez se comprueba en la
+sección~\ref{sec:exploratorio}.
+
+\subsection{Descripción básica}
+
+En cuanto al dataset, este contiene 13\,910 instancias, 128 variables, 10 batches y 6 clases,
+aunque el enunciado menciona 129 variables debido a que cuenta también el identificador del batch.
+Las tablas~\ref{tab:filasBatch} y~\ref{tab:filasClase} muestran el número de mediciones por batch
+y por clase.
+
+\begin{table}[H]
+\centering
+\caption{Número de mediciones por batch.}
+\label{tab:filasBatch}
+\begin{tabular}{lrrrrrrrrrr}
+\toprule
+Batch      & 1   & 2    & 3    & 4   & 5   & 6    & 7    & 8   & 9   & 10   \\
+\midrule
+Mediciones & 445 & 1244 & 1586 & 161 & 197 & 2300 & 3613 & 294 & 470 & 3600 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Número de mediciones por clase.}
+\label{tab:filasClase}
+\begin{tabular}{clr}
+\toprule
+Clase & Gas          & Mediciones \\
+\midrule
+1     & Etanol       & 2565 \\
+2     & Etileno      & 2926 \\
+3     & Amoníaco     & 1641 \\
+4     & Acetaldehído & 1936 \\
+5     & Acetona      & 3009 \\
+6     & Tolueno      & 1833 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Implicaciones para el diseño}
+
+Las implicaciones de diseño son las siguientes:
+\begin{itemize}
+  \item El contenido de cada batch es muy distinto entre ellos (de 161 a 3613 mediciones), por lo
+        que esto da folds de tamaño distinto.
+  \item No todos los batches tienen todos los gases, como es el caso de los batches 3 y 4, que no
+        tienen tolueno.
+  \item Existe un desbalanceo de clases, lo que obliga a tener que implementar una métrica
+        balanceada.
+\end{itemize}
